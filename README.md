@@ -1,59 +1,92 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Halcyon Auto — API / BACKEND
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+REST API behind the **Halcyon Auto** car-sales website. It stores car listings and site content, handles staff sign-in, uploads photos and videos to Cloudinary, and emails the owner when someone uses the contact form.
 
-## About Laravel
+Frontend repo: **halcyon-auto-web** (Next.js).
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Features
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- **Car listings** — create, edit, delete, sold/available status, discount percent and down payment
+- **Auth** — token-based staff sign-in (Laravel Sanctum); all write routes are admin-only
+- **Uploads** — images, GIFs and videos via Cloudinary (photos 5 MB, GIFs 10 MB, videos 40 MB)
+- **Site settings** — hero media (desktop and mobile), contact details, About, Our Trust, location, pop-up ad and finance calculator defaults
+- **Careers** — job openings with open/closed status and closing dates
+- **FAQ** — questions with topics, publish/hide and drag-free reordering
+- **Articles** — drafts and published posts, categories, auto-generated slugs
+- **Contact form** — sends an email to the owner through Resend
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Tech stack
 
-## Learning Laravel
+| Area | Tools |
+|---|---|
+| Framework | Laravel (PHP 8.2+) |
+| Auth | Laravel Sanctum |
+| Media | Cloudinary (signed uploads) |
+| Email | Resend |
+| Database | MySQL / PostgreSQL / SQLite |
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+## Getting started
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+```bash
+git clone <this-repo>
+cd halcyon-auto-api
 
-## Laravel Sponsors
+composer install
+cp .env.example .env
+php artisan key:generate
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+# set your database in .env, then:
+php artisan migrate
+php artisan serve        # http://localhost:8000
+```
 
-### Premium Partners
+Create the first admin user (for example with `php artisan tinker`) and sign in from the website's `/admin/login`.
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+### Environment variables
 
-## Contributing
+| Variable | Purpose |
+|---|---|
+| `APP_URL`, `DB_*` | Standard Laravel app and database settings |
+| `CLOUDINARY_*` | Cloud name, API key and API secret for uploads (see `config/services.snippet.php`, merge it into `config/services.php`) |
+| `RESEND_API_KEY` | Resend API key |
+| `CONTACT_FROM_EMAIL` | Sender address for contact emails |
+| `CONTACT_TO_EMAIL` | Where contact emails are delivered (the owner's inbox) |
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+> Never commit `.env`. Rotate any secret that has ever been shared or committed.
 
-## Code of Conduct
+### Upload limits
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Videos can be up to 40 MB, so raise these in `php.ini` (and your web server):
 
-## Security Vulnerabilities
+```ini
+upload_max_filesize = 45M
+post_max_size = 48M
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## API overview
+
+Public (no sign-in):
+
+| Method | Route | Description |
+|---|---|---|
+| GET | `/api/listings`, `/api/listings/{id}` | Browse cars (filters, sorting, pagination) |
+| GET | `/api/settings` | Saved site content |
+| GET | `/api/careers`, `/api/faqs` | Open roles, published FAQs |
+| GET | `/api/articles`, `/api/articles/{slug}` | Published articles |
+| POST | `/api/contact` | Contact form |
+| POST | `/api/login` | Staff sign-in (returns a token) |
+
+Admin (Bearer token): create/update/delete for listings, careers, FAQs and articles; `PUT /api/settings/{group}`; `POST /api/uploads`. See `routes/api.php` for the full list.
+
+## Project structure
+
+```
+app/Http/Controllers/Api/   Listings, Auth, Uploads, Settings, Careers, Faq, Articles, Contact
+app/Models/                 CarListing, CareerOpening, Faq, Article, SiteSetting
+database/migrations/        Tables (FAQ migration seeds a few starter questions)
+routes/api.php              All API routes
+```
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Private project. All rights reserved.
