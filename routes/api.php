@@ -61,6 +61,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::put('/settings/{group}', [SettingsController::class, 'update']);
 
-    Route::post('/uploads', [UploadController::class, 'store']);
+    Route::post('/uploads/sign', [UploadController::class, 'sign'])->middleware('throttle:60,1');
     Route::delete('/uploads', [UploadController::class, 'destroy']);
 });

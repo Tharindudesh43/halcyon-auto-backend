@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\SiteSetting;
+use App\Services\CloudinaryService;
 use Illuminate\Http\Request;
 
 class SettingsController extends Controller
@@ -18,13 +19,17 @@ class SettingsController extends Controller
     }
 
 
-    public function update(Request $request, string $group)
+    public function update(Request $request, string $group, CloudinaryService $cloudinary)
     {
         abort_unless(in_array($group, self::GROUPS, true), 404);
 
         $data = $request->validate($this->rules($group));
 
+        $previous = SiteSetting::where('key', $group)->first()?->value;
+
         $setting = SiteSetting::updateOrCreate(['key' => $group], ['value' => $data]);
+
+        $cloudinary->purgeRemoved($previous, $data);
 
         return response()->json($setting->value);
     }
