@@ -2,13 +2,17 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\DeletesCloudinaryMedia;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
 class CarListing extends Model
 {
-    use HasFactory;
+    use HasFactory, DeletesCloudinaryMedia;
+
+    /** Columns that hold Cloudinary URLs — cleaned up on update/delete. */
+    public array $cloudinaryAttributes = ['images'];
 
     protected $fillable = [
         'title', 'slug', 'brand', 'model', 'year', 'price', 'discount_percent', 'down_payment', 'mileage', 'cc',
